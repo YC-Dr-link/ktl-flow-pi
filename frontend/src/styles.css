@@ -38,3 +38,16 @@ body { overflow: hidden; user-select: none; -webkit-tap-highlight-color: transpa
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: .45; }
+
+/* PI-01 검색 결과 줄 — 손가락으로 누르기 좋게 크게 */
+.row { display: grid; grid-template-columns: 1.4fr 1fr 1.2fr 24px; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 0 14px;
+  border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 20px; text-align: left; }
+.row:active { background: #e8f1fc; }
+.row-company { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-model { color: var(--muted); }
+.row-serial { font-variant-numeric: tabular-nums; }
+.row-go { color: var(--muted); font-size: 26px; }
+.results { position: relative; }
+.hint.bad { color: var(--bad); }
+.busy { position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: busy 1s linear infinite; }
+@keyframes busy { from { transform: translateX(-60%); } to { transform: translateX(60%); } }

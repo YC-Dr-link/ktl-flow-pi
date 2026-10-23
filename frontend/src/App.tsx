@@ -1,41 +1,29 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import type { DeviceRow } from "./api";
+import Search from "./screens/Search";
 
-/** PI-01 기기 검색 (빈 뼈대). 검색 · 기기 정보 · QR은 뒤 이슈에서 채운다. */
+type Screen = { name: "search" } | { name: "device"; device: DeviceRow } | { name: "register" };
+
+/** 화면 흐름: PI-01 검색 → PI-02 기기 정보(#5) → PI-05 QR(#5) · PI-06 등록(#6) */
 export default function App() {
-  const [q, setQ] = useState("");
-  const [server, setServer] = useState<"checking" | "ok" | "down">("checking");
+  const [screen, setScreen] = useState<Screen>({ name: "search" });
 
-  useEffect(() => {
-    fetch("/api/health")
-      .then((r) => setServer(r.ok ? "ok" : "down"))
-      .catch(() => setServer("down"));
-  }, []);
+  if (screen.name === "search")
+    return <Search onPick={(device) => setScreen({ name: "device", device })} onRegister={() => setScreen({ name: "register" })} />;
 
+  // 아직 만들지 않은 화면 (다음 이슈에서 채움)
   return (
     <div className="screen">
       <header className="bar">
-        <h1>유속계 접수</h1>
-        <button className="btn ghost" disabled>관리</button>
+        <h1>{screen.name === "device" ? "기기 정보" : "새 기기 등록"}</h1>
       </header>
-
-      <div className="search">
-        <input
-          autoFocus
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="업체명 · 제조번호 · 별칭"
-          aria-label="기기 검색"
-        />
-        <button className="btn primary" disabled={q.trim().length < 2}>검색</button>
-      </div>
-
       <div className="results">
-        <p className="hint">{q.trim().length < 2 ? "2글자 이상 입력하면 목록이 나와요" : "검색은 다음 작업에서 연결돼요"}</p>
+        {screen.name === "device"
+          ? <p className="hint">{screen.device.company} · {screen.device.model} · {screen.device.serial}<br />기기 정보 · 접수번호 입력(PI-02)은 다음 작업에서 연결돼요</p>
+          : <p className="hint">기기 등록(PI-06)은 다음 작업에서 연결돼요</p>}
       </div>
-
       <footer className="foot">
-        <button className="btn">+ 새 기기 등록</button>
-        <span className={`status ${server}`}>{server === "ok" ? "서버 연결됨" : server === "down" ? "서버 꺼짐" : "확인 중…"}</span>
+        <button className="btn" onClick={() => setScreen({ name: "search" })}>처음으로</button>
       </footer>
     </div>
   );

@@ -13,9 +13,10 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db
+from . import db, devices
 
 app = FastAPI(title="ktl-flow-pi", docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json")
+app.include_router(devices.router)
 
 
 @app.on_event("startup")
