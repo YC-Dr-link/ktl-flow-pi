@@ -27,4 +27,6 @@ cd frontend && npm install && npm run dev        # 개발: http://127.0.0.1:5173
 cd frontend && npm run build                     # 빌드하면 백엔드가 http://127.0.0.1:8000 에서 화면까지 준다
 ```
 
+가짜 기기 20대 넣기: `cd backend && .venv/bin/python -m app.seed ../synthetic/devices.csv` (DB는 `backend/data/pi.db`, 서버를 켜면 스키마가 자동으로 맞춰짐)
+
 테스트: `cd backend && .venv/bin/pytest` · `cd frontend && npm run build` (Windows는 `.venv/bin/` 대신 `.venv\Scripts\`)
