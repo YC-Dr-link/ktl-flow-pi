@@ -4,7 +4,8 @@ from app import db
 from app.models import Approval, Company, CompanyAlias, Device, PitotTube
 from app.seed import load_csv
 from app.text import normalize
-from tests.conftest import SYNTHETIC
+
+SYNTHETIC = db.BACKEND.parent / "synthetic" / "devices.csv"
 
 
 def test_migration_creates_tables(fresh_db):

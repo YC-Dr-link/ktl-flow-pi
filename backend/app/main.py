@@ -21,6 +21,8 @@ app = FastAPI(title="ktl-flow-pi", docs_url="/api/docs", redoc_url=None, openapi
 @app.on_event("startup")
 def _migrate() -> None:
     db.upgrade()   # DB가 없으면 만들고, 스키마가 바뀌었으면 맞춘다
+
+
 DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 

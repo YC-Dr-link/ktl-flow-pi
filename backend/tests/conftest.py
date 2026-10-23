@@ -2,8 +2,6 @@ import pytest
 
 from app import db
 
-SYNTHETIC = db.BACKEND.parent / "synthetic" / "devices.csv"
-
 
 @pytest.fixture()
 def fresh_db(tmp_path, monkeypatch):
