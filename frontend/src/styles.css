@@ -22,7 +22,7 @@ body { overflow: hidden; user-select: none; -webkit-tap-highlight-color: transpa
 .bar h1 { margin: 0; font-size: 26px; }
 
 .search { display: flex; gap: 10px; }
-.search input { flex: 1; height: 56px; font-size: 22px; padding: 0 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+.search input { flex: 1; height: 60px; font-size: 22px; padding: 0 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
 .search input:focus { outline: none; border-color: var(--accent); }
 
 .results { flex: 1; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
@@ -33,8 +33,8 @@ body { overflow: hidden; user-select: none; -webkit-tap-highlight-color: transpa
 .status.ok { color: var(--good); }
 .status.down { color: var(--bad); }
 
-/* 손가락으로 누르기 쉬운 크기 (최소 48px) */
-.btn { min-height: 52px; min-width: 96px; padding: 0 18px; font-size: 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+/* 터치 버튼 높이 56px 이상 (03 화면 공통 규칙) */
+.btn { min-height: 56px; min-width: 96px; padding: 0 18px; font-size: 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.ghost { background: transparent; }
 .btn:disabled { opacity: .45; }
