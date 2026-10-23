@@ -22,3 +22,9 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   }
   return res.json() as Promise<T>;
 }
+
+export interface DeviceDetail {
+  id: number; company: string; model: string; serial: string; approval_no: string | null;
+  max_range: number; last_receipt_no: string | null; pitots: string[];
+}
+export interface ReceiptOut { id: number; receipt_no: string; serial: string; qr_text: string; qr_svg: string }
