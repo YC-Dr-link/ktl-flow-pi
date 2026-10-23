@@ -36,3 +36,6 @@ Thumbs.db
 .idea/
 .vscode/
 .env
+
+# 빌드 부산물
+*.tsbuildinfo

@@ -1,0 +1,40 @@
+/* 800×480 터치 화면. 폰트는 Pi에 깔린 것만 쓴다 (외부 폰트 · CDN 금지) */
+:root {
+  --bg: #f6f7f9;
+  --surface: #fff;
+  --ink: #16181d;
+  --muted: #6b7280;
+  --line: #e3e6eb;
+  --accent: #2a78d6;
+  --good: #1f9d55;
+  --bad: #d6452a;
+  font-family: "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+body { overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+.screen { width: 800px; height: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }
+.bar { display: flex; align-items: center; justify-content: space-between; }
+.bar h1 { margin: 0; font-size: 26px; }
+
+.search { display: flex; gap: 10px; }
+.search input { flex: 1; height: 60px; font-size: 22px; padding: 0 16px; border: 2px solid var(--line); border-radius: 12px; background: var(--surface); }
+.search input:focus { outline: none; border-color: var(--accent); }
+
+.results { flex: 1; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+.hint { color: var(--muted); font-size: 18px; text-align: center; margin-top: 60px; }
+
+.foot { display: flex; align-items: center; justify-content: space-between; }
+.status { font-size: 14px; color: var(--muted); }
+.status.ok { color: var(--good); }
+.status.down { color: var(--bad); }
+
+/* 터치 버튼 높이 56px 이상 (03 화면 공통 규칙) */
+.btn { min-height: 56px; min-width: 96px; padding: 0 18px; font-size: 20px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { background: transparent; }
+.btn:disabled { opacity: .45; }
