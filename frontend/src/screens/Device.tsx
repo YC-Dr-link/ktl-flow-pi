@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { api, ApiError, DeviceDetail, ReceiptOut } from "../api";
+import { api, ApiError, createReceipt, DeviceDetail, ReceiptOut } from "../api";
 import { Brand } from "../brand/Logo";
-import { initial } from "../ui";
+import { dday, pitotCalibration } from "../demo/standards";
+import { IconDoc, IconEdit, IconWarn, initial } from "../ui";
 
 /** 숫자만 받아 NN-NNNNNN-NN 모양으로 (`-` 자동) */
 export function formatReceipt(digits: string): string {
@@ -28,10 +29,30 @@ function ReceiptView({ digits }: { digits: string }) {
   return <>{out}</>;
 }
 
+/** 기기 피토관 줄: 제조번호 + (교정 만료가 가까우면) 노란 경고 칩 → PI-04 */
+function Pitots({ list, onSpecs }: { list: string[]; onSpecs: () => void }) {
+  if (!list.length) return <>—</>;
+  // 교정 정보는 아직 데모 값 (demo/standards.ts) — 실제 연동은 PI-04 백엔드가 생기면
+  const warn = list.map(pitotCalibration).filter((c) => c.state !== "ok");
+  return (
+    <span className="pitots">
+      <span className="pitot-list">{list.join(" · ")}</span>
+      {warn.length > 0 && (
+        <button className="warn-chip" onClick={onSpecs} title="기준정보 확인 (PI-04)">
+          <IconWarn /> 교정 {warn[0].state === "expired" ? "만료" : "만료 임박"} {dday(warn[0].days)}
+        </button>
+      )}
+    </span>
+  );
+}
+
 /** PI-02 기기 정보 + 이번 접수번호 → [다음] → PI-05 QR (03 시나리오 A-2) */
-export default function Device({ id, onBack, onDone }: { id: number; onBack: () => void; onDone: (r: ReceiptOut) => void }) {
+export default function Device({ id, initialDigits = "", onBack, onDone, onEdit, onDocs, onSpecs }: {
+  id: number; initialDigits?: string; onBack: () => void; onDone: (r: ReceiptOut) => void;
+  onEdit: (digits: string) => void; onDocs: (digits: string) => void; onSpecs: (digits: string) => void;
+}) {
   const [d, setD] = useState<DeviceDetail | null>(null);
-  const [digits, setDigits] = useState("");
+  const [digits, setDigits] = useState(initialDigits);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(0);
@@ -51,7 +72,7 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
     setBusy(true);
     setErr(null);
     try {
-      onDone(await api<ReceiptOut>("/receipts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device_id: id, receipt_no: value }) }));
+      onDone(await createReceipt(id, value));
     } catch (e) {
       setErr(e instanceof ApiError ? e.message : String(e));
       setShake((x) => x + 1);
@@ -72,13 +93,16 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
   });
 
   const press = (k: string) => setDigits((x) => (k === "⌫" ? x.slice(0, -1) : k === "C" ? "" : (x + k).slice(0, 10)));
-  const state = !digits ? " empty" : ok ? " done" : "";
+  const state = !digits ? " blank" : ok ? " done" : "";
 
   return (
     <div className="screen">
       <header className="bar">
         <Brand title="기기 정보 확인" />
-        <button className="btn ghost sm" onClick={onBack}>‹ 검색으로</button>
+        <div className="bar-right">
+          <button className="btn ghost sm" onClick={() => onEdit(digits)} disabled={!d}><IconEdit />정보 수정</button>
+          <button className="btn ghost sm" onClick={onBack}>‹ 검색으로</button>
+        </div>
       </header>
       <div className="pi02">
         <div className="left">
@@ -97,6 +121,7 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
                   <dt>형식승인번호</dt><dd style={{ ["--i" as string]: 1 }}>{d.approval_no ?? <span className="tag">없음 · 확인 필요</span>}</dd>
                   <dt>최대 측정범위</dt><dd style={{ ["--i" as string]: 2 }}>{d.max_range} m/s</dd>
                   <dt>작년 접수번호</dt><dd style={{ ["--i" as string]: 3 }}>{d.last_receipt_no ?? "—"}</dd>
+                  <dt>피토관</dt><dd style={{ ["--i" as string]: 4 }}><Pitots list={d.pitots} onSpecs={() => onSpecs(digits)} /></dd>
                 </dl>
               </>
             ) : err ? (
@@ -105,7 +130,10 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
               <div className="loading"><i style={{ width: "60%", height: 28 }} /><i /><i style={{ width: "80%" }} /><i style={{ width: "70%" }} /></div>
             )}
           </div>
-          <button className="btn primary next" disabled={!ok || !d || busy} onClick={next}>{busy ? "QR 만드는 중…" : "다음 ›  QR 만들기"}</button>
+          <div className="actions">
+            <button className="btn docs" disabled={!d} onClick={() => onDocs(digits)}><IconDoc /> 서류로 대조</button>
+            <button className="btn primary next" disabled={!ok || !d || busy} onClick={next}>{busy ? "QR 만드는 중…" : "다음 ›  QR 만들기"}</button>
+          </div>
         </div>
         <div className="entry">
           <label className="entry-label">이번 접수번호</label>
