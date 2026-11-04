@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError, DeviceDetail, ReceiptOut } from "../api";
+import { Brand } from "../brand/Logo";
+import { initial } from "../ui";
 
 /** 숫자만 받아 NN-NNNNNN-NN 모양으로 (`-` 자동) */
 export function formatReceipt(digits: string): string {
@@ -8,6 +10,23 @@ export function formatReceipt(digits: string): string {
 }
 const DONE = /^\d{2}-\d{6}-\d{2}$/;
 const HINT = "접수번호 형식은 26-000123-01 입니다";
+const MASK = "00-000000-00";
+
+/** 입력한 자리는 하나씩 튀어나오고, 남은 자리는 옅은 0으로 보인다 */
+function ReceiptView({ digits }: { digits: string }) {
+  const out = [];
+  let k = 0;
+  for (let i = 0; i < MASK.length; i++) {
+    if (MASK[i] === "-") {
+      out.push(<span key={i} className={k < digits.length ? "sep" : "ph"}>-</span>);
+      continue;
+    }
+    if (k === digits.length) out.push(<span key="caret" className="caret" />);
+    out.push(k < digits.length ? <span key={i} className="d">{digits[k]}</span> : <span key={i} className="ph">0</span>);
+    k++;
+  }
+  return <>{out}</>;
+}
 
 /** PI-02 기기 정보 + 이번 접수번호 → [다음] → PI-05 QR (03 시나리오 A-2) */
 export default function Device({ id, onBack, onDone }: { id: number; onBack: () => void; onDone: (r: ReceiptOut) => void }) {
@@ -15,12 +34,31 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
   const [digits, setDigits] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [shake, setShake] = useState(0);
   const value = formatReceipt(digits);
   const ok = DONE.test(value);
 
   useEffect(() => {
     api<DeviceDetail>(`/devices/${id}`).then(setD).catch((e: ApiError) => setErr(e.message));
   }, [id]);
+
+  const next = async () => {
+    if (busy) return;
+    if (!ok) {
+      setShake((x) => x + 1);
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    try {
+      onDone(await api<ReceiptOut>("/receipts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device_id: id, receipt_no: value }) }));
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : String(e));
+      setShake((x) => x + 1);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // 실제 키보드 · 바코드 입력도 받는다 (화면 키패드와 같이)
   useEffect(() => {
@@ -33,50 +71,57 @@ export default function Device({ id, onBack, onDone }: { id: number; onBack: () 
     return () => window.removeEventListener("keydown", on);
   });
 
-  const next = async () => {
-    if (!ok || busy) return;
-    setBusy(true);
-    setErr(null);
-    try {
-      onDone(await api<ReceiptOut>("/receipts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ device_id: id, receipt_no: value }) }));
-    } catch (e) {
-      setErr(e instanceof ApiError ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   const press = (k: string) => setDigits((x) => (k === "⌫" ? x.slice(0, -1) : k === "C" ? "" : (x + k).slice(0, 10)));
+  const state = !digits ? " empty" : ok ? " done" : "";
 
   return (
     <div className="screen">
       <header className="bar">
-        <h1>기기 정보</h1>
-        <button className="btn ghost" onClick={onBack}>‹ 검색으로</button>
+        <Brand title="기기 정보 확인" />
+        <button className="btn ghost sm" onClick={onBack}>‹ 검색으로</button>
       </header>
       <div className="pi02">
         <div className="left">
-          <dl className="info">
+          <div className="devcard card">
             {d ? (
               <>
-                <dt>업체</dt><dd className="big">{d.company}</dd>
-                <dt>모델</dt><dd>{d.model}</dd>
-                <dt>제조번호</dt><dd className="big">{d.serial}</dd>
-                <dt>형식승인번호</dt><dd>{d.approval_no ?? <span className="bad">없음</span>}</dd>
-                <dt>최대 측정범위</dt><dd>{d.max_range} m/s</dd>
-                <dt>작년 접수번호</dt><dd>{d.last_receipt_no ?? "—"}</dd>
+                <div className="devhead">
+                  <span className="avatar" aria-hidden>{initial(d.company)}</span>
+                  <div>
+                    <div className="company">{d.company}</div>
+                    <div className="model">모델 {d.model}</div>
+                  </div>
+                </div>
+                <dl className="info">
+                  <dt>제조번호</dt><dd className="big" style={{ ["--i" as string]: 0 }}>{d.serial}</dd>
+                  <dt>형식승인번호</dt><dd style={{ ["--i" as string]: 1 }}>{d.approval_no ?? <span className="tag">없음 · 확인 필요</span>}</dd>
+                  <dt>최대 측정범위</dt><dd style={{ ["--i" as string]: 2 }}>{d.max_range} m/s</dd>
+                  <dt>작년 접수번호</dt><dd style={{ ["--i" as string]: 3 }}>{d.last_receipt_no ?? "—"}</dd>
+                </dl>
               </>
-            ) : <dd className="hint">{err ?? "불러오는 중…"}</dd>}
-          </dl>
-          <button className="btn primary next" disabled={!ok || !d || busy} onClick={next}>{busy ? "만드는 중…" : "다음 ›  QR 만들기"}</button>
+            ) : err ? (
+              <div className="loading"><p className="bad">{err}</p></div>
+            ) : (
+              <div className="loading"><i style={{ width: "60%", height: 28 }} /><i /><i style={{ width: "80%" }} /><i style={{ width: "70%" }} /></div>
+            )}
+          </div>
+          <button className="btn primary next" disabled={!ok || !d || busy} onClick={next}>{busy ? "QR 만드는 중…" : "다음 ›  QR 만들기"}</button>
         </div>
         <div className="entry">
           <label className="entry-label">이번 접수번호</label>
-          <div className={`receipt${value ? "" : " empty"}`}>{value || "26-000123-01"}</div>
-          <div className="entry-msg">{value && !ok ? <span className="bad">{HINT}</span> : err && d ? <span className="bad">{err}</span> : " "}</div>
+          <div key={shake} className={`receipt${state}${shake ? " err" : ""}`} aria-label={value || "접수번호 입력 전"}>
+            <ReceiptView digits={digits} />
+          </div>
+          <div className="entry-msg">
+            {ok ? <span className="ok-msg">✓ 형식이 맞아요. [다음]을 누르세요</span>
+              : value && digits.length === 10 ? <span className="bad">{HINT}</span>
+              : err && d ? <span className="bad">{err}</span>
+              : <span className="hint-sm">숫자 10자리 · ‘-’는 자동으로 들어가요</span>}
+          </div>
           <div className="keypad">
             {["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].map((k) => (
-              <button key={k} className="btn key" onClick={() => press(k)} aria-label={k === "⌫" ? "한 글자 지우기" : k === "C" ? "모두 지우기" : k}>{k}</button>
+              <button key={k} className={`btn key${k === "C" || k === "⌫" ? " fn" : ""}`} onClick={() => press(k)}
+                aria-label={k === "⌫" ? "한 글자 지우기" : k === "C" ? "모두 지우기" : k}>{k}</button>
             ))}
           </div>
         </div>
