@@ -9,15 +9,29 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import db, devices, receipts
+from . import db, devices, receipts, registry
 
 app = FastAPI(title="ktl-flow-pi", docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json")
 app.include_router(devices.router)
 app.include_router(receipts.router)
+app.include_router(registry.router)
+
+FIELD_KO = {"company": "업체명", "model": "모델", "serial": "제조번호", "approval_no": "형식승인번호", "max_range": "최대 측정범위",
+            "range_min": "최소 측정범위", "last_receipt_no": "작년 접수번호", "pitots": "피토관", "aliases": "업체 별칭",
+            "reason": "수정 사유", "device_id": "기기", "receipt_no": "접수번호"}
+
+
+@app.exception_handler(RequestValidationError)
+async def _invalid(_: Request, e: RequestValidationError) -> JSONResponse:
+    """형식이 틀린 입력도 화면에 그대로 보여 줄 수 있는 한국어 한 줄로 (03 공통 규칙: 코드값 숨기기)."""
+    locs = [str(x) for err in e.errors() for x in err.get("loc", ()) if isinstance(x, str) and x != "body"]
+    label = FIELD_KO.get(locs[-1] if locs else "", "입력값")
+    return JSONResponse({"detail": f"{label} 형식이 맞지 않습니다."}, status_code=400)
 
 
 @app.on_event("startup")

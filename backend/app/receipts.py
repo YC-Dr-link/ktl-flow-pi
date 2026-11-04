@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 from . import db, qr
-from .models import Device, Receipt
+from .models import Company, Device, DeviceHistory, Receipt
 
 router = APIRouter(prefix="/api")
 RECEIPT_HINT = "접수번호 형식은 26-000123-01 입니다"
@@ -22,6 +22,12 @@ class DeviceDetail(BaseModel):
     max_range: float
     last_receipt_no: str | None
     pitots: list[str]
+    # PI-06 수정 화면용
+    aliases: list[str] = []
+    range_min: float | None = None
+    company_devices: int = 1     # 같은 업체 기기 수 (업체명을 바꾸면 함께 바뀌는 대수)
+    edits: int = 0               # 수정 이력 건수
+    updated_at: str | None = None
 
 
 def _last_receipt(s, d: Device) -> str | None:
@@ -30,15 +36,27 @@ def _last_receipt(s, d: Device) -> str | None:
     return r or d.last_receipt_no
 
 
+def detail(s, d: Device) -> DeviceDetail:
+    count = lambda stmt: s.scalar(stmt) or 0  # noqa: E731
+    return DeviceDetail(id=d.id, company=d.company.name, model=d.model, serial=d.serial, approval_no=d.approval_no,
+                        max_range=d.max_range, last_receipt_no=_last_receipt(s, d),
+                        pitots=[p.serial for p in d.pitots if p.serial],
+                        aliases=[a.alias for a in d.company.aliases],
+                        range_min=d.approval.range_min if d.approval else None,
+                        company_devices=count(select(func.count()).select_from(Device).where(Device.company_id == d.company_id)),
+                        edits=count(select(func.count()).select_from(DeviceHistory).where(DeviceHistory.device_id == d.id,
+                                                                                         DeviceHistory.action == "update")),
+                        updated_at=d.updated_at)
+
+
 @router.get("/devices/{device_id}", response_model=DeviceDetail)
 def device_detail(device_id: int) -> DeviceDetail:
     with db.session() as s:
-        d = s.scalar(select(Device).options(joinedload(Device.company), joinedload(Device.pitots)).where(Device.id == device_id))
+        d = s.scalar(select(Device).options(joinedload(Device.company).joinedload(Company.aliases), joinedload(Device.pitots),
+                                            joinedload(Device.approval)).where(Device.id == device_id))
         if not d:
             raise HTTPException(404, "기기를 찾지 못했습니다.")
-        return DeviceDetail(id=d.id, company=d.company.name, model=d.model, serial=d.serial, approval_no=d.approval_no,
-                            max_range=d.max_range, last_receipt_no=_last_receipt(s, d),
-                            pitots=[p.serial for p in d.pitots if p.serial])
+        return detail(s, d)
 
 
 class ReceiptIn(BaseModel):
