@@ -110,3 +110,46 @@ export function Highlight({ text, q }: { text: string; q: string }) {
     </>
   );
 }
+
+const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round" } as const;
+
+export const IconGear = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden style={{ marginRight: 6, verticalAlign: "-3px" }}>
+    <circle cx="12" cy="12" r="3.2" />
+    <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" />
+  </svg>
+);
+
+export const IconPlus = ({ size = 30 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden><path d="M12 5v14M5 12h14" /></svg>
+);
+
+export const IconList = ({ size = 30 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden>
+    <path d="M9 6h11M9 12h11M9 18h11" />
+    <circle cx="4.5" cy="6" r="1.2" fill="currentColor" /><circle cx="4.5" cy="12" r="1.2" fill="currentColor" /><circle cx="4.5" cy="18" r="1.2" fill="currentColor" />
+  </svg>
+);
+
+export const IconEdit = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...stroke} aria-hidden style={{ marginRight: 6, verticalAlign: "-3px" }}>
+    <path d="M4 20h4L19 9l-4-4L4 16Z" /><path d="m13.5 6.5 4 4" />
+  </svg>
+);
+
+/** 경고 삼각형 (노랑 = 확인 필요) */
+export const IconWarn = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden className="ico-warn">
+    <path d="M12 3 2 20.5h20Z" fill="#f2b705" />
+    <path d="M12 9.5v5" stroke="#3b2c00" strokeWidth="2.4" strokeLinecap="round" />
+    <circle cx="12" cy="17.6" r="1.3" fill="#3b2c00" />
+  </svg>
+);
+
+/** 화면에서 값 비교용 정규화 — 백엔드 app/text.py normalize와 같은 규칙 (㈜ · (주) · 공백 · 기호 · 대소문자 무시) */
+export function norm(s: string | null | undefined): string {
+  if (!s) return "";
+  return s.replace(/㈜/g, "(주)").normalize("NFKC").toLowerCase()
+    .replace(/\(주\)|\(유\)|\(사\)|\(재\)|주식회사|유한회사|\bco\b\.?,?\s*\bltd\b\.?|\binc\b\.?|\bcorp\b\.?/g, "")
+    .replace(/[^0-9a-z가-힣]/g, "");
+}

@@ -29,7 +29,6 @@ cd frontend && npm run build                     # 빌드하면 백엔드가 htt
 
 가짜 기기 20대 넣기: `cd backend && .venv/bin/python -m app.seed ../synthetic/devices.csv` (DB는 `backend/data/pi.db`, 서버를 켜면 스키마가 자동으로 맞춰짐)
 
-화면: PI-01 검색 → PI-02 기기 정보 + 접수번호 → PI-05 QR. PI-02의 [서류로 대조] → PI-03 → PI-04 → PI-05, [정보 수정] → PI-06. PI-01 오른쪽 위 [관리] → 기기 등록 · 기기 목록/수정 · 기준정보.
-PI-03(서류 촬영 · OCR)과 PI-04의 기준기 교정 현황은 아직 **데모 값**(`frontend/src/demo/`, 화면에 '데모' 표시) — 카메라 · OCR은 #8에서.
+화면: PI-01 검색 → PI-02 기기 정보 + 접수번호 → PI-05 QR. PI-02의 [정보 수정] → PI-06. PI-01 오른쪽 위 [관리] → 기기 등록 · 기기 목록/수정.
 
 테스트: `cd backend && .venv/bin/pytest` · `cd frontend && npm run build` (Windows는 `.venv/bin/` 대신 `.venv\Scripts\`)

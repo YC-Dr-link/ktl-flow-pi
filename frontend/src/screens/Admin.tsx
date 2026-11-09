@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { api, Stats } from "../api";
 import { Brand } from "../brand/Logo";
-import { IconList, IconPlus, IconShield, StatusChip } from "../ui";
+import { IconList, IconPlus, StatusChip } from "../ui";
 
 /**
- * 관리 메뉴 (PI-06 입구). 기기 등록 · 기기 목록/수정 · 기준정보 확인.
+ * 관리 메뉴 (PI-06 입구). 기기 등록 · 기기 목록/수정.
  * TODO(확인 필요): 03 시나리오 A-6 "관리 메뉴는 시험자 PIN 확인 후 열림" — 시험자 · PIN 관리 방식이 정해지면 여기 앞에 PIN 화면
  */
-export default function Admin({ onBack, onRegister, onList, onSpecs }: {
-  onBack: () => void; onRegister: () => void; onList: () => void; onSpecs: () => void;
+export default function Admin({ onBack, onRegister, onList }: {
+  onBack: () => void; onRegister: () => void; onList: () => void;
 }) {
   const [st, setSt] = useState<Stats | null>(null);
   useEffect(() => {
@@ -18,7 +18,6 @@ export default function Admin({ onBack, onRegister, onList, onSpecs }: {
   const tiles = [
     { ico: <IconPlus />, title: "기기 등록", sub: "처음 오는 기기를 등록해요", on: onRegister, main: true },
     { ico: <IconList />, title: "기기 목록 · 수정", sub: "업체명 · 번호가 바뀌면 고쳐요", on: onList },
-    { ico: <IconShield />, title: "기준정보 확인", sub: "기준기 교정 · 형식승인", on: onSpecs },
   ];
   const nums: [string, number | undefined, string][] = [
     ["등록 기기", st?.devices, "대"], ["업체", st?.companies, "곳"], ["형식승인", st?.approvals, "건"], ["오늘 접수", st?.receipts_today, "건"],

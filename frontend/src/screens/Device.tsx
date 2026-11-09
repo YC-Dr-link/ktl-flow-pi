@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError, createReceipt, DeviceDetail, ReceiptOut } from "../api";
 import { Brand } from "../brand/Logo";
-import { dday, pitotCalibration } from "../demo/standards";
-import { IconDoc, IconEdit, IconWarn, initial } from "../ui";
+import { IconEdit, initial } from "../ui";
 
 /** 숫자만 받아 NN-NNNNNN-NN 모양으로 (`-` 자동) */
 export function formatReceipt(digits: string): string {
@@ -29,27 +28,16 @@ function ReceiptView({ digits }: { digits: string }) {
   return <>{out}</>;
 }
 
-/** 기기 피토관 줄: 제조번호 + (교정 만료가 가까우면) 노란 경고 칩 → PI-04 */
-function Pitots({ list, onSpecs }: { list: string[]; onSpecs: () => void }) {
+/** 기기 피토관 줄: 제조번호 목록 */
+function Pitots({ list }: { list: string[] }) {
   if (!list.length) return <>—</>;
-  // 교정 정보는 아직 데모 값 (demo/standards.ts) — 실제 연동은 PI-04 백엔드가 생기면
-  const warn = list.map(pitotCalibration).filter((c) => c.state !== "ok");
-  return (
-    <span className="pitots">
-      <span className="pitot-list">{list.join(" · ")}</span>
-      {warn.length > 0 && (
-        <button className="warn-chip" onClick={onSpecs} title="기준정보 확인 (PI-04)">
-          <IconWarn /> 교정 {warn[0].state === "expired" ? "만료" : "만료 임박"} {dday(warn[0].days)}
-        </button>
-      )}
-    </span>
-  );
+  return <span className="pitots"><span className="pitot-list">{list.join(" · ")}</span></span>;
 }
 
 /** PI-02 기기 정보 + 이번 접수번호 → [다음] → PI-05 QR (03 시나리오 A-2) */
-export default function Device({ id, initialDigits = "", onBack, onDone, onEdit, onDocs, onSpecs }: {
+export default function Device({ id, initialDigits = "", onBack, onDone, onEdit }: {
   id: number; initialDigits?: string; onBack: () => void; onDone: (r: ReceiptOut) => void;
-  onEdit: (digits: string) => void; onDocs: (digits: string) => void; onSpecs: (digits: string) => void;
+  onEdit: (digits: string) => void;
 }) {
   const [d, setD] = useState<DeviceDetail | null>(null);
   const [digits, setDigits] = useState(initialDigits);
@@ -126,7 +114,7 @@ export default function Device({ id, initialDigits = "", onBack, onDone, onEdit,
                   <dt>형식승인번호</dt><dd style={{ ["--i" as string]: 1 }}>{d.approval_no ?? <span className="tag">없음 · 확인 필요</span>}</dd>
                   <dt>최대 측정범위</dt><dd style={{ ["--i" as string]: 2 }}>{d.max_range} m/s</dd>
                   <dt>작년 접수번호</dt><dd style={{ ["--i" as string]: 3 }}>{d.last_receipt_no ?? "—"}</dd>
-                  <dt>피토관</dt><dd style={{ ["--i" as string]: 4 }}><Pitots list={d.pitots} onSpecs={() => onSpecs(digits)} /></dd>
+                  <dt>피토관</dt><dd style={{ ["--i" as string]: 4 }}><Pitots list={d.pitots} /></dd>
                 </dl>
               </>
             ) : err ? (
@@ -136,7 +124,6 @@ export default function Device({ id, initialDigits = "", onBack, onDone, onEdit,
             )}
           </div>
           <div className="actions">
-            <button className="btn docs" disabled={!d} onClick={() => onDocs(digits)}><IconDoc /> 서류로 대조</button>
             <button className="btn primary next" disabled={!ok || !d || busy} onClick={next}>{busy ? "QR 만드는 중…" : "다음 ›  QR 만들기"}</button>
           </div>
         </div>
