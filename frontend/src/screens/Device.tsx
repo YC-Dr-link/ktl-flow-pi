@@ -92,6 +92,11 @@ export default function Device({ id, initialDigits = "", onBack, onDone, onEdit,
     return () => window.removeEventListener("keydown", on);
   });
 
+  // 접수 실패 문구는 번호를 다시 고치기 시작하면 지운다
+  useEffect(() => {
+    if (d) setErr(null);
+  }, [digits]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const press = (k: string) => setDigits((x) => (k === "⌫" ? x.slice(0, -1) : k === "C" ? "" : (x + k).slice(0, 10)));
   const state = !digits ? " blank" : ok ? " done" : "";
 
@@ -141,9 +146,9 @@ export default function Device({ id, initialDigits = "", onBack, onDone, onEdit,
             <ReceiptView digits={digits} />
           </div>
           <div className="entry-msg">
-            {ok ? <span className="ok-msg">✓ 형식이 맞아요. [다음]을 누르세요</span>
+            {err && d ? <span className="bad">{err}</span>
+              : ok ? <span className="ok-msg">✓ 형식이 맞아요. [다음]을 누르세요</span>
               : value && digits.length === 10 ? <span className="bad">{HINT}</span>
-              : err && d ? <span className="bad">{err}</span>
               : <span className="hint-sm">숫자 10자리 · ‘-’는 자동으로 들어가요</span>}
           </div>
           <div className="keypad">
