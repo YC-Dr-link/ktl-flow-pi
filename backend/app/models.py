@@ -4,6 +4,7 @@
 업체 ─< 기기 >─ 형식승인
 기기 ─< 피토관
 기기 ─< 접수 기록 (이번 접수번호 · QR)
+기기 ─< 수정 이력 (PI-06 등록 · 수정 — 무엇이 어떻게 바뀌었고 왜)
 """
 from __future__ import annotations
 
@@ -74,6 +75,7 @@ class Device(Base):
     approval: Mapped[Approval | None] = relationship()
     pitots: Mapped[list[PitotTube]] = relationship(back_populates="device", cascade="all, delete-orphan")
     receipts: Mapped[list[Receipt]] = relationship(back_populates="device")
+    history: Mapped[list[DeviceHistory]] = relationship(back_populates="device", cascade="all, delete-orphan")
 
 
 class PitotTube(Base):
@@ -95,3 +97,16 @@ class Receipt(Base):
     qr_text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[str] = mapped_column(String(40), default=now)
     device: Mapped[Device] = relationship(back_populates="receipts")
+
+
+class DeviceHistory(Base):
+    """기기 등록 · 수정 이력 (03 시나리오 A-2 "정보가 바뀜 → 수정, 이력 남김").
+    changes는 {"칸": [예전 값, 새 값]} JSON 문자열."""
+    __tablename__ = "device_history"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    device_id: Mapped[int] = mapped_column(ForeignKey("devices.id", ondelete="CASCADE"), index=True)
+    action: Mapped[str] = mapped_column(String(20))          # create | update
+    changes: Mapped[str] = mapped_column(Text)
+    reason: Mapped[str | None] = mapped_column(String(200))
+    created_at: Mapped[str] = mapped_column(String(40), default=now)
+    device: Mapped[Device] = relationship(back_populates="history")

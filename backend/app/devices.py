@@ -24,10 +24,11 @@ class DeviceRow(BaseModel):
 
 
 @router.get("/devices", response_model=list[DeviceRow])
-def search_devices(q: str = "") -> list[DeviceRow]:
-    """업체명 · 업체 별칭 · 제조번호로 찾는다. ㈜/(주)/공백/대소문자 차이는 무시한다."""
+def search_devices(q: str = "", all: bool = False) -> list[DeviceRow]:  # noqa: A002
+    """업체명 · 업체 별칭 · 제조번호로 찾는다. ㈜/(주)/공백/대소문자 차이는 무시한다.
+    all=true이고 검색어가 짧으면 전체 목록 (PI-06 기기 목록 · 수정)."""
     if len(q.strip()) < MIN_QUERY:
-        return []
+        return _all() if all else []
     qn = normalize(q)
     if not qn:
         return []
@@ -43,3 +44,9 @@ def search_devices(q: str = "") -> list[DeviceRow]:
     rank = lambda d: (d.serial_norm != qn, not d.serial_norm.startswith(qn), d.company.name, d.serial)  # noqa: E731
     return [DeviceRow(id=d.id, company=d.company.name, model=d.model, serial=d.serial, last_receipt_no=d.last_receipt_no)
             for d in sorted(rows, key=rank)[:LIMIT]]
+
+
+def _all() -> list[DeviceRow]:
+    with db.session() as s:
+        rows = s.scalars(select(Device).join(Company).options(joinedload(Device.company)).order_by(Company.norm, Device.serial_norm)).unique().all()
+    return [DeviceRow(id=d.id, company=d.company.name, model=d.model, serial=d.serial, last_receipt_no=d.last_receipt_no) for d in rows]
